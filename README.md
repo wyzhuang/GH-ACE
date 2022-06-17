@@ -1,6 +1,6 @@
 # GH-ACE
 KBS_Just-in-time defect prediction based on AST change embedding
-At present, the source code files uploaded by this warehouse are not sorted out, and will be further supplemented later.
+At present, the source code files uploaded by this repository are not sorted out, and will be further supplemented later.
 
 1. "corpus" directory: The corpus of the project is stored in the "corpus" directory.
 
