@@ -1,0 +1,5 @@
+This directory contains the latest distributions of both JUnit 3 and 4 for testing of junit task;
+for proper execution, JUnit 3 must come on classpath before JUnit 4.
+
+See the files LICENSE.junit.html respectively LICENSE.junit4.html for the terms of distribution. For
+more information about JUnit or the latest release, see <http://www.junit.org/>.

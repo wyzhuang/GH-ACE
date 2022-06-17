@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       https://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<html lang="en">
+
+<head>
+<title> Find Task</title>
+</head>
+
+<body>
+
+<h2 id="find">Find</h2>
+<h3>Description</h3>
+<p>Searches in a given path for a file and returns the absolute to it as property.
+If delimiter is set this task returns all found locations.</p>
+
+<h3>Parameters</h3>
+<table class="attr">
+  <tr>
+    <th scope="col">Attribute</th>
+    <th scope="col">Description</th>
+    <th scope="col">Required</th>
+  </tr>
+  <tr>
+    <td>file</td>
+    <td>The name of the file to search.</td>
+    <td>yes</td>
+  </tr>
+  <tr>
+    <td>location</td>
+    <td>The name of the property where to store the location</td>
+    <td>yes</td>
+  </tr>
+  <tr>
+    <td>delimiter</td>
+    <td>A delimiter to use when returning the list</td>
+    <td>only if the list is required</td>
+  </tr>
+</table>
+
+<h3>Parameters specified as nested elements</h3>
+
+<h4>path</h4>
+<p>The path where to search the file.</p>
+
+<h3>Examples</h3>
+<pre>
+    &lt;find file="ant.jar" location="loc">
+        &lt;path>
+            &lt;fileset dir="${ant.home}"/>
+        &lt;path>
+    &lt;/find>
+</pre>
+Searches in Ant home directory for a file <samp>ant.jar</samp> and stores its location in
+property <samp>loc</samp> (should be <samp>ANT_HOME/bin/ant.jar</samp>).
+
+<pre>
+    &lt;find file="ant.jar" location="loc" delimiter=";">
+        &lt;path>
+            &lt;fileset dir="C:/"/>
+        &lt;path>
+    &lt;/find>
+    &lt;echo>ant.jar found in: ${loc}&lt;/echo>
+</pre>
+Searches in Windows <samp>C:</samp> drive for all <samp>ant.jar</samp> and stores their locations in
+property <samp>loc</samp> delimited with <q>;</q>. (should need a long time :-)
+After that it prints out the result (e.g. <samp>C:/ant-1.5.4/bin/ant.jar;C:/ant-1.6/bin/ant.jar</samp>).
+
+</body>
+</html>

@@ -1,0 +1,375 @@
+<?xml version="1.0"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<project name="junitlauncher-test" basedir=".">
+
+    <property name="output.dir" location="${java.io.tmpdir}"/>
+    <property name="build.classes.dir" value="${build.tests.value}"/>
+    <target name="init">
+        <mkdir dir="${output.dir}"/>
+    </target>
+
+    <path id="junit.platform.classpath">
+        <fileset dir="../../../../../lib/optional" includes="junit-platform*.jar"/>
+    </path>
+
+    <path id="junit.engine.vintage.classpath">
+        <fileset dir="../../../../../lib/optional" includes="junit-vintage-engine*.jar"/>
+        <fileset dir="../../../../../lib/optional" includes="junit-*.jar"/>
+        <fileset dir="../../../../../lib/optional" includes="hamcrest*.jar"/>
+        <fileset dir="../../../../../lib/optional" includes="opentest4j*.jar"/>
+    </path>
+
+    <path id="junit.engine.jupiter.classpath">
+        <fileset dir="../../../../../lib/optional">
+            <include name="junit-jupiter*.jar"/>
+            <include name="opentest4j*.jar"/>
+        </fileset>
+    </path>
+
+    <path id="test.classpath">
+        <pathelement location="${build.classes.dir}"/>
+        <path refid="junit.engine.vintage.classpath"/>
+        <path refid="junit.engine.jupiter.classpath"/>
+    </path>
+
+    <target name="test-failure-stops-build" depends="init">
+        <junitlauncher>
+            <listener classname="org.example.junitlauncher.Tracker"
+                      outputDir="${output.dir}"
+                      resultFile="${test-failure-stops-build.tracker}"
+                      if="test-failure-stops-build.tracker"/>
+
+            <!-- A specific test meant to fail -->
+            <test name="org.example.junitlauncher.vintage.AlwaysFailingJUnit4Test" haltOnFailure="true"/>
+            <!-- classpath to be used for the tests -->
+            <classpath refid="test.classpath"/>
+        </junitlauncher>
+    </target>
+
+    <target name="test-failure-continues-build" depends="init">
+        <junitlauncher>
+            <listener classname="org.example.junitlauncher.Tracker"
+                      outputDir="${output.dir}"
+                      resultFile="${test-failure-continues-build.tracker}"
+                      if="test-failure-continues-build.tracker"/>
+
+            <!-- A specific test meant to fail -->
+            <test name="org.example.junitlauncher.vintage.AlwaysFailingJUnit4Test"/>
+            <classpath refid="test.classpath"/>
+        </junitlauncher>
+    </target>
+
+    <target name="test-success" depends="init">
+        <junitlauncher>
+            <listener classname="org.example.junitlauncher.Tracker"
+                      outputDir="${output.dir}"
+                      resultFile="${test-success.tracker}"
+                      if="test-success.tracker"/>
+            <!-- A specific test meant to pass -->
+            <test name="org.example.junitlauncher.vintage.JUnit4SampleTest"/>
+            <classpath refid="test.classpath"/>
+        </junitlauncher>
+    </target>
+
+    <target name="test-one-specific-method" depends="init">
+        <junitlauncher>
+            <listener classname="org.example.junitlauncher.Tracker"
+                      outputDir="${output.dir}"
+                      resultFile="${test-one-specific-method.tracker}"
+                      if="test-one-specific-method.tracker"/>
+
+            <test name="org.example.junitlauncher.vintage.JUnit4SampleTest" methods="testBar" haltonfailure="true"/>
+            <classpath refid="test.classpath"/>
+        </junitlauncher>
+    </target>
+
+    <target name="test-multiple-specific-methods" depends="init">
+        <junitlauncher>
+            <listener classname="org.example.junitlauncher.Tracker"
+                      outputDir="${output.dir}"
+                      resultFile="${test-multiple-specific-methods.tracker}"
+                      if="test-multiple-specific-methods.tracker"/>
+
+            <test name="org.example.junitlauncher.vintage.JUnit4SampleTest" methods=" testFoo, testFooBar "
+                  haltonfailure="true"/>
+            <classpath refid="test.classpath"/>
+        </junitlauncher>
+    </target>
+
+    <target name="test-multiple-individual" depends="init">
+        <junitlauncher>
+            <test name="org.example.junitlauncher.vintage.AlwaysFailingJUnit4Test">
+                <listener classname="org.example.junitlauncher.Tracker"
+                          outputDir="${output.dir}"
+                          resultFile="${test-multiple-individual-1.tracker}"
+                          if="test-multiple-individual-1.tracker"/>
+            </test>
+            <test name="org.example.junitlauncher.vintage.JUnit4SampleTest">
+                <listener classname="org.example.junitlauncher.Tracker"
+                          outputDir="${output.dir}"
+                          resultFile="${test-multiple-individual-2.tracker}"
+                          if="test-multiple-individual-2.tracker"/>
+            </test>
+            <classpath refid="test.classpath"/>
+        </junitlauncher>
+    </target>
+
+    <target name="test-batch" depends="init">
+        <property name="junitlauncher.test.tracker.append.file" value="${output.dir}/${test-batch.tracker}"/>
+        <junitlauncher>
+            <classpath refid="test.classpath"/>
+            <testclasses outputdir="${output.dir}">
+                <listener classname="org.example.junitlauncher.Tracker"
+                          if="test-batch.tracker"/>
+
+                <fileset dir="${build.classes.dir}">
+                    <include name="org/example/**/junitlauncher/**/"/>
+                    <exclude name="org/example/**/junitlauncher/**/ForkedTest.class"/>
+                </fileset>
+                <listener type="legacy-brief" sendSysOut="true"/>
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
+            </testclasses>
+        </junitlauncher>
+    </target>
+
+    <target name="test-basic-fork" depends="init">
+        <junitlauncher>
+            <classpath refid="test.classpath"/>
+            <test name="org.example.junitlauncher.vintage.ForkedTest" outputdir="${output.dir}">
+                <listener classname="org.example.junitlauncher.Tracker"
+                          outputDir="${output.dir}"
+                          resultFile="${test-basic-fork.tracker}"
+                          if="test-basic-fork.tracker"/>
+
+                <fork dir="${basedir}">
+                    <sysproperty key="junitlauncher.test.sysprop.one" value="forked"/>
+                </fork>
+
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
+            </test>
+        </junitlauncher>
+    </target>
+
+    <target name="test-junit-platform-lib-excluded" depends="init">
+        <junitlauncher>
+            <classpath refid="junit.engine.jupiter.classpath"/>
+            <classpath>
+                <pathelement location="${build.classes.dir}"/>
+            </classpath>
+            <test name="org.example.junitlauncher.jupiter.JupiterSampleTest" outputdir="${output.dir}">
+                <!-- expect the test to not be launched due to CNFE on JUnit platform classes -->
+                <fork dir="${basedir}" includeJUnitPlatformLibraries="false"/>
+            </test>
+        </junitlauncher>
+    </target>
+
+    <target name="test-junit-ant-runtime-lib-excluded" depends="init">
+        <junitlauncher>
+            <classpath refid="junit.engine.jupiter.classpath"/>
+            <classpath>
+                <pathelement location="${build.classes.dir}"/>
+            </classpath>
+            <test name="org.example.junitlauncher.jupiter.JupiterSampleTest" outputdir="${output.dir}">
+                <!-- expect the test to not be launched due to CNFE on Ant runtime classes -->
+                <fork dir="${basedir}" includeAntRuntimeLibraries="false"/>
+            </test>
+        </junitlauncher>
+    </target>
+
+    <target name="test-junit-platform-lib-custom-location" depends="init">
+        <junitlauncher>
+            <classpath refid="junit.engine.jupiter.classpath"/>
+            <classpath>
+                <pathelement location="${build.classes.dir}"/>
+            </classpath>
+            <!-- we set includeJUnitPlatformLibraries=false on the fork element
+            and then explicitly specify a location of the JUnit platform libraries -->
+            <classpath refid="junit.platform.classpath"/>
+            <test name="org.example.junitlauncher.jupiter.JupiterSampleTest" outputdir="${output.dir}">
+                <listener classname="org.example.junitlauncher.Tracker"
+                          outputDir="${output.dir}"
+                          resultFile="${test-junit-platform-lib-custom-location.tracker}"
+                          if="test-junit-platform-lib-custom-location.tracker"/>
+                <fork dir="${basedir}" includeJUnitPlatformLibraries="false"/>
+            </test>
+        </junitlauncher>
+    </target>
+
+    <target name="test-ant-runtime-lib-custom-location" depends="init">
+        <!-- duplicate the Ant classes into a jar -->
+        <jar destfile="${output.dir}/ant-runtime-duplicated.jar" basedir="${ant.runtime.classes.original.path}"/>
+
+        <property name="junitlauncher.test.tracker.append.file" value="${output.dir}/${test-ant-runtime-lib-custom-location.tracker}"/>
+        <junitlauncher>
+            <classpath>
+                <path refid="junit.engine.jupiter.classpath"/>
+                <path refid="junit.engine.vintage.classpath"/>
+                <pathelement location="${build.classes.dir}"/>
+                <!-- our duplicated Ant runtime classes jar, since we
+                exclude the original Ant runtime classes on the fork element
+                by setting includeAntRuntimeLibraries=false -->
+                <pathelement location="${output.dir}/ant-runtime-duplicated.jar"/>
+            </classpath>
+            <testclasses outputdir="${output.dir}">
+                <fileset dir="${build.classes.dir}">
+                    <include name="org/example/**/junitlauncher/**/"/>
+                </fileset>
+                <listener classname="org.example.junitlauncher.Tracker"
+                          if="test-ant-runtime-lib-custom-location.tracker"/>
+                <fork dir="${basedir}" includeAntRuntimeLibraries="false">
+                    <sysproperty key="junitlauncher.test.sysprop.one" value="forked"/>
+                </fork>
+            </testclasses>
+        </junitlauncher>
+    </target>
+
+
+    <target name="test-ant-and-junit-platform-lib-custom-location" depends="init">
+        <!-- duplicate the Ant classes into a jar -->
+        <jar destfile="${output.dir}/ant-runtime-duplicated.jar" basedir="${ant.runtime.classes.original.path}"/>
+
+        <junitlauncher>
+            <classpath>
+                <path refid="junit.engine.vintage.classpath"/>
+                <pathelement location="${build.classes.dir}"/>
+                <!-- our duplicated Ant runtime classes jar, since we
+                exclude the original Ant runtime classes on the fork element
+                by setting includeAntRuntimeLibraries=false -->
+                <pathelement location="${output.dir}/ant-runtime-duplicated.jar"/>
+                <!-- we set includeJUnitPlatformLibraries=false on the fork element
+                    and then explicitly specify a location of the JUnit platform libraries -->
+                <path refid="junit.platform.classpath"/>
+            </classpath>
+            <testclasses outputdir="${output.dir}">
+                <fileset dir="${build.classes.dir}">
+                    <include name="org/example/**/junitlauncher/**/JUnit4SampleTest.class"/>
+                </fileset>
+                <listener classname="org.example.junitlauncher.Tracker"
+                          outputDir="${output.dir}"
+                          resultFile="${test-ant-and-junit-platform-lib-custom-location.tracker}"
+                          if="test-ant-and-junit-platform-lib-custom-location.tracker"/>
+                <fork dir="${basedir}" includeAntRuntimeLibraries="false" includeJUnitPlatformLibraries="false"/>
+            </testclasses>
+        </junitlauncher>
+    </target>
+
+	<target name="test-method-with-include-tag" depends="init">
+        <!-- junitlauncher  includeTags="fast, superfast" excludeTags="slow"-->
+        <junitlauncher includeTags="   fast   , superfast" excludeTags="   slow">
+            <test name="org.example.junitlauncher.jupiter.JupiterSampleTest" outputdir="${output.dir}">
+                <listener classname="org.example.junitlauncher.Tracker" outputDir="${output.dir}"
+                          resultFile="${test-method-with-include-tag.tracker}" if="test-method-with-include-tag.tracker" />
+            </test>
+        </junitlauncher>
+    </target>
+
+    <target name="test-method-with-exclude-tag" depends="init">
+        <junitlauncher excludeTags="slow">
+            <test name="org.example.junitlauncher.jupiter.JupiterSampleTest" outputdir="${output.dir}">
+                <listener classname="org.example.junitlauncher.Tracker" outputDir="${output.dir}"
+                          resultFile="${test-method-with-exclude-tag.tracker}" if="test-method-with-exclude-tag.tracker" />
+            </test>
+        </junitlauncher>
+    </target>
+
+    <target name="test-method-with-tag-2-classes" depends="init">
+        <junitlauncher includeTags="fast">
+            <test name="org.example.junitlauncher.jupiter.JupiterSampleTest" outputdir="${output.dir}">
+                <listener classname="org.example.junitlauncher.Tracker" outputDir="${output.dir}"
+                          resultFile="${test-method-with-tag-2-classes1.tracker}" if="test-method-with-tag-2-classes1.tracker" />
+            </test>
+            <test name="org.example.junitlauncher.jupiter.JupiterTagSampleTest" outputdir="${output.dir}">
+                <listener classname="org.example.junitlauncher.Tracker" outputDir="${output.dir}"
+                          resultFile="${test-method-with-tag-2-classes2.tracker}" if="test-method-with-tag-2-classes2.tracker" />
+            </test>
+        </junitlauncher>
+    </target>
+	
+    <target name="test-beforeall-failure-stops-build" depends="init">
+        <property name="junitlauncher.test.tracker.append.file" value="${output.dir}/${test-beforeall-failure-stops-build.tracker}"/>
+        <junitlauncher>
+            <listener classname="org.example.junitlauncher.Tracker"
+                      if="test-beforeall-failure-stops-build.tracker"/>
+            <test name="org.example.junitlauncher.jupiter.JupiterSampleTestFailingBeforeAll" haltOnFailure="true"/>
+        </junitlauncher>
+    </target>
+
+    <target name="test-beforeall-failure-continues-build" depends="init">
+        <property name="junitlauncher.test.tracker.append.file" value="${output.dir}/${test-beforeall-failure-continues-build.tracker}"/>
+        <junitlauncher>
+            <listener classname="org.example.junitlauncher.Tracker"
+                      if="test-beforeall-failure-continues-build.tracker"/>
+            <test name="org.example.junitlauncher.jupiter.JupiterSampleTestFailingBeforeAll"/>
+        </junitlauncher>
+    </target>
+
+    <target name="test-method-with-tag-fileset" depends="init">
+        <property name="junitlauncher.test.tracker.append.file" value="${output.dir}/${test-method-with-tag-fileset.tracker}"/>
+        <junitlauncher includeTags="fast">
+            <testclasses outputdir="${output.dir}">
+                <fileset dir="${build.classes.dir}">
+                    <include name="org/example/junitlauncher/jupiter/*" />
+                </fileset>
+                <listener classname="org.example.junitlauncher.Tracker" outputDir="${output.dir}"
+                          if="test-method-with-tag-fileset.tracker" />
+            </testclasses>
+        </junitlauncher>
+    </target>
+
+    <target name="test-method-with-tag-fileset-fork" depends="init">
+        <property name="junitlauncher.test.tracker.append.file" value="${output.dir}/${test-method-with-tag-fileset-fork.tracker}" />
+        <junitlauncher includeTags="fast">
+            <classpath refid="junit.engine.jupiter.classpath" />
+                    <classpath>
+                        <pathelement location="${build.classes.dir}" />
+                    </classpath>
+                    <classpath refid="junit.platform.classpath" />
+            <testclasses outputdir="${output.dir}">
+                <fileset dir="${build.classes.dir}">
+                    <include name="org/example/junitlauncher/jupiter/*" />
+                </fileset>
+                <fork dir="${basedir}" includeJUnitPlatformLibraries="false">
+                </fork>
+                <listener classname="org.example.junitlauncher.Tracker" outputDir="${output.dir}"
+                          if="test-method-with-tag-fileset-fork.tracker" />
+            </testclasses>
+        </junitlauncher>
+    </target>
+
+    <target name="bz-63958">
+        <junitlauncher>
+            <classpath refid="test.classpath"/>
+            <testclasses>
+                <listener classname="org.example.junitlauncher.Tracker"
+                          outputDir="${output.dir}"
+                          resultFile="${bz-63958.tracker}"
+                          if="bz-63958.tracker"/>
+                <fileset dir="${build.classes.dir}">
+                    <include name="**/ForkedTest.class"/>
+                </fileset>
+                <fork>
+                    <sysproperty key="junitlauncher.test.sysprop.one" value="forked"/>
+                </fork>
+            </testclasses>
+            <listener type="legacy-plain" sendSysOut="true" />
+            <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="true"/>
+        </junitlauncher>
+    </target>
+</project>
+

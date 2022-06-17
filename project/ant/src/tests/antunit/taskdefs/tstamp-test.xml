@@ -1,0 +1,110 @@
+<?xml version="1.0"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project default="antunit" xmlns:au="antlib:org.apache.ant.antunit">
+  <import file="../antunit-base.xml" />
+
+  <target name="-adjust-for-offset-at-epoch">
+    <property name="ant-package" location="${input}/org/apache/ant"/>
+    <mkdir dir="${ant-package}"/>
+    <mkdir dir="${output}"/>
+    <echo file="${ant-package}/IsEpochIn1969Here.java"><![CDATA[
+package org.apache.ant;
+
+import org.apache.tools.ant.taskdefs.condition.Condition;
+import java.util.Calendar;
+import java.util.Date;
+
+public class IsEpochIn1969Here implements Condition {
+    @Override
+    public boolean eval() {
+        final Calendar c = Calendar.getInstance();
+        c.setTime(new Date(0));
+        final int offset = (c.get(Calendar.ZONE_OFFSET) + c.get(Calendar.DST_OFFSET));
+        return offset < 0;
+    }
+}
+]]></echo>
+    <javac srcdir="${input}" destdir="${output}"/>
+    <typedef name="isepochin1969here" classname="org.apache.ant.IsEpochIn1969Here">
+      <classpath>
+        <pathelement location="${output}"/>
+      </classpath>
+    </typedef>
+    <condition property="expected-dstamp" value="19700101">
+      <isepochin1969here/>
+    </condition>
+    <property name="expected-dstamp" value="19700102"/>
+    <echo>${expected-dstamp}</echo>
+  </target>
+
+  <target name="testMagicProperty" depends="-adjust-for-offset-at-epoch">
+    <local name="ant.tstamp.now"/>
+    <property name="ant.tstamp.now" value="86400"/>
+    <tstamp/>
+    <au:assertPropertyEquals name="DSTAMP" value="${expected-dstamp}"/>
+  </target>
+
+  <target name="testMagicPropertyIso">
+    <local name="ant.tstamp.now.iso"/>
+    <property name="ant.tstamp.now.iso" value="1972-04-17T08:07:00Z"/>
+    <tstamp/>
+    <au:assertPropertyEquals name="DSTAMP" value="19720417"/>
+  </target>
+
+  <target name="testMagicPropertyBoth">
+    <local name="ant.tstamp.now"/>
+    <local name="ant.tstamp.now.iso"/>
+    <property name="ant.tstamp.now" value="100000"/>
+    <property name="ant.tstamp.now.iso" value="1972-04-17T08:07:22Z"/>
+    <tstamp/>
+    <!-- 'iso' overrides 'simple' -->
+    <au:assertPropertyEquals name="DSTAMP" value="19720417"/>
+  </target>
+
+  <target name="testSourceDateEpoch">
+    <mkdir dir="${input}"/>
+    <mkdir dir="${output}"/>
+    <echo file="${input}/TstampAntunitTest.java"><![CDATA[
+      import org.apache.tools.ant.*;
+      import org.apache.tools.ant.taskdefs.*;
+      public class TstampAntunitTest {
+        public static void main(String[] args) {
+          Task task = new Tstamp();
+          task.setProject(new Project());
+          task.execute();
+          String today = task.getProject().getProperty("TODAY");
+          System.out.println("TODAY is " + today);
+        }
+      }
+    ]]></echo>
+    <javac srcdir="${input}" destdir="${output}"/>
+    <local name="testout"/>
+    <java classname="TstampAntunitTest"
+          failonerror="true"
+          outputproperty="testout"
+          fork="true">
+      <sysproperty key="user.timezone" value="GMT"/>
+      <classpath>
+        <pathelement location="${output}"/>
+        <pathelement path="${java.class.path}"/>
+      </classpath>
+      <env key="SOURCE_DATE_EPOCH" value="1650585600"/>
+    </java>
+    <au:assertEquals expected="TODAY is April 22 2022" actual="${testout}"/>
+  </target>
+</project>
