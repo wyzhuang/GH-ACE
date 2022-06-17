@@ -10,11 +10,11 @@ At present, the source code files uploaded by this repository are not sorted out
 
 4. "model" directory: The training model is stored in the "model" directory
 
-5. "project" directory: The project history data is stored in the "project" directory. The "ace_pygit2_test_multi.py" file is used to extract the AST change token from the project.
+5. "project" directory: The project history data is stored in the "project" directory. The "ACE_pygit2_test_multi.py" file is used to extract the AST change token from the project.
 
-6.preprocess.py file for processing raw_ Raw data in data
+6.preprocess.py file for processing raw data in "data/raw_data" directory.
 
-7.train_ test_ sets_ generation.py file is used to convert the original data in the "data/raw_ data" directory into training sets and test sets that can be learned directly, and the generated files are stored in "data/ACE_data" directory
+7.train_ test_ sets_ generation.py file is used to convert the original data in the "data/raw_data" directory into training sets and test sets that can be learned directly, and the generated files are stored in "data/ACE_data" directory
 
 This repository still includes the following issues:
 
